@@ -19,11 +19,15 @@ function generateTransaction() {
   const id = faker.random.uuid();
   const name = faker.name.findName();
   const amount = faker.finance.amount();
+  const accountId = "1";
+  const date = faker.date.recent();
 
   return {
     id,
     name,
     amount,
+    accountId,
+    date,
   };
 }
 
@@ -38,7 +42,14 @@ function generateTransactionList(count) {
 }
 
 const transactions = generateTransactionList(10);
-const accounts = [];
+const accounts = [
+  {
+    id: "1",
+    username: "demo123",
+    email: "demo123",
+    password: "demo123",
+  },
+];
 
 //api calls
 
@@ -52,6 +63,7 @@ app.get("/accounts", (req, res) => {
   res.status(200).send(accounts);
 });
 
+// creates account
 app.post("/accounts/:username/:email/:password", (req, res) => {
   const id = faker.random.uuid();
   const { username, email, password } = req.params;
@@ -83,11 +95,46 @@ app.post("/accounts/:username/:email/:password", (req, res) => {
   });
 });
 
-app.post("/transactions/:id/:name/:amount", (req, res) => {
-  const { id, name, amount } = req.params;
+// checks login
+app.post("/check-account", (req, res) => {
+  const { email, password } = req.body;
+
+  // Check if required parameters are present in the request body
+  if (!email || !password) {
+    res
+      .status(400)
+      .send({ message: "Missing required parameters in the request body." });
+    return;
+  }
+
+  // Find the account with the provided email and password
+  const existingAccount = accounts.find(
+    (account) => account.email === email && account.password === password
+  );
+
+  if (existingAccount) {
+    res.status(200).send({
+      message: "Account exists.",
+      data: {
+        id: existingAccount.id,
+        username: existingAccount.username,
+        email: existingAccount.email,
+        password: existingAccount.password,
+      },
+    });
+  } else {
+    res.status(404).send({ message: "Account not found." });
+  }
+});
+
+// create Transaction
+app.post("/transactions/:name/:amount/:accountId", (req, res) => {
+  const id = faker.random.uuid();
+  const date = new Date();
+  const { name, amount, accountId } = req.params;
 
   // Check if required parameters are present
-  if (!id || !name || !amount) {
+  if (!name || !amount || !accountId) {
     res
       .status(400)
       .send({ message: "Missing required parameters in the URL." });
@@ -99,6 +146,8 @@ app.post("/transactions/:id/:name/:amount", (req, res) => {
     id,
     name,
     amount,
+    accountId,
+    date,
   };
 
   // Add the new transaction to the existing list
@@ -107,5 +156,49 @@ app.post("/transactions/:id/:name/:amount", (req, res) => {
   res.status(201).send({
     message: "Transaction added successfully.",
     transaction: newTransaction,
+  });
+});
+
+// get transaction by ID
+app.get("/transactions/:id", (req, res) => {
+  const { id } = req.params;
+
+  // Check if the ID is provided
+  if (!id) {
+    res.status(400).send({ message: "Missing transaction ID in the URL." });
+    return;
+  }
+
+  // Find the transaction with the provided ID
+  const transaction = transactions.find((t) => t.id === id);
+
+  if (transaction) {
+    res.status(200).send({
+      message: "Transaction found.",
+      transaction: transaction,
+    });
+  } else {
+    res.status(404).send({ message: "Transaction not found." });
+  }
+});
+
+// get transactions by accountId
+app.get("/transactions/account/:accountId", (req, res) => {
+  const { accountId } = req.params;
+
+  // Check if the accountId is provided
+  if (!accountId) {
+    res.status(400).send({ message: "Missing accountId in the URL." });
+    return;
+  }
+
+  // Find all transactions with the provided accountId
+  const accountTransactions = transactions.filter(
+    (t) => t.accountId === accountId
+  );
+
+  res.status(200).send({
+    message: "Transactions found.",
+    transactions: accountTransactions,
   });
 });
