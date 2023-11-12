@@ -128,7 +128,7 @@ app.post("/check-account", (req, res) => {
 });
 
 // create Transaction
-app.post("/transactions/:name/:amount/:accountId", (req, res) => {
+app.post("/transactions-create/:name/:amount/:accountId", (req, res) => {
   const id = faker.random.uuid();
   const date = new Date();
   const { name, amount, accountId } = req.params;
@@ -156,6 +156,58 @@ app.post("/transactions/:name/:amount/:accountId", (req, res) => {
   res.status(201).send({
     message: "Transaction added successfully.",
     transaction: newTransaction,
+  });
+});
+
+// delete transaction
+app.delete("/transactions-delete/:id", (req, res) => {
+  const { id } = req.params;
+
+  // Find the index of the transaction with the given id
+  const transactionIndex = transactions.findIndex(
+    (transaction) => transaction.id === id
+  );
+
+  // Check if the transaction with the given id exists
+  if (transactionIndex === -1) {
+    res.status(404).send({ message: "Transaction not found." });
+    return;
+  }
+
+  // Remove the transaction from the array
+  const deletedTransaction = transactions.splice(transactionIndex, 1)[0];
+
+  res.status(200).send({
+    message: "Transaction deleted succesfully.",
+    transaction: deletedTransaction,
+  });
+});
+
+// update transaction
+app.put("/transactions-update/:id/:name/:amount", (req, res) => {
+  const { id, name, amount } = req.params;
+
+  // Find the index of the transaction with the given id
+  const transactionIndex = transactions.findIndex(
+    (transaction) => transaction.id === id
+  );
+
+  // Check if the transaction with the given id exists
+  if (transactionIndex === -1) {
+    res.status(404).send({ message: "Transaction not found." });
+    $;
+    return;
+  }
+
+  // Update the name and amount of the transaction
+  transactions[transactionIndex].name =
+    name || transactions[transactionIndex].name;
+  transactions[transactionIndex].amount =
+    amount || transactions[transactionIndex].amount;
+
+  res.status(200).send({
+    message: "Transaction updated succesfully.",
+    transaction: transactions[transactionIndex],
   });
 });
 
